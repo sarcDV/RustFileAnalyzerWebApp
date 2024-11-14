@@ -7,11 +7,22 @@
     <style>
         body { 
             font-family: Arial, sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; margin: 0;
+            margin: 0; /* Remove default margin */
+            display: flex; /* Use flexbox for layout */
+            flex-direction: column; /* Stack elements vertically */
+            align-items: center; /* Center elements horizontally */
+            justify-content: flex-start; /* Align items at the top */
+            height: 100vh; /* Full height of the viewport */
+            padding-top: 20px; /* Space from the top */
+        }
+        .fixed-form {
+            z-index: 1000; /* Ensure it appears above other content */
+            background-color: white; /* Optional: Background color for better visibility */
+            padding: 10px; /* Optional: Padding for aesthetics */
+            border: 1px solid #ccc; /* Optional: Border for better visibility */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Optional: Shadow for depth */
+            text-align: center; /* Center text inside the form */
+            margin-bottom: 20px; /* Space below the form */
         }
         .node {
             cursor: pointer;
@@ -39,6 +50,29 @@
             display: none;
             z-index: 10;
         }
+        #loading {
+            margin-top: 20px;
+            font-size: 18px;
+            color: blue;
+        }
+        #capaOutput {
+            margin-top: 0; /* Remove margin to align with tree */
+            font-size: 11px; 
+            white-space: pre-wrap; 
+            padding: 10px; /* Optional: Add padding for better readability */
+            max-height: 200px; /* Set a maximum height */
+            overflow-y: auto; /* Enable vertical scrolling */
+            width: 100%; /* Make it responsive */
+            text-align: left; /* Align text to the left */
+            border: none; /* Remove border */
+            display: flex; /* Use flexbox for centering */
+            justify-content: center; /* Center content */
+        }
+        #tree {
+            margin-top: 20px; /* Add some space above the tree */
+            width: 100%; /* Make it responsive */
+            text-align: center; /* Center the tree */
+        }
     </style>
 </head>
 <body>
@@ -47,10 +81,17 @@
         <input type="file" id="fileInput" name="file"><br><br>
         <input type="button" value="Upload" onclick="uploadFile()">
     </form>
+    <div id="loading" style="display: none;">Analysis in progress...</div>
     <div id="result"></div>
-    <div id="tree"></div>
-    <div id="nodeInfo"></div>
+    
+    <!-- New container for tree and capaOutput -->
+    <div style="width: 100%; text-align: center;">
+        <div id="tree"></div>
+        <pre id="capaOutput" style="font-size: 10px; white-space: pre-wrap; display: inline-block;"></pre> <!-- Use inline-block to center -->
+    </div>
 
+    <div id="nodeInfo"></div>
+    
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script>
         function uploadFile() {
@@ -58,20 +99,32 @@
             const fileInput = document.getElementById('fileInput');
             const filename = fileInput.files[0].name;
 
+            // Show loading message
+            document.getElementById('loading').style.display = 'block';
+
             fetch('/upload', {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 data.filename = filename;  // Add the filename to the data object
                 displayResult(data);
             })
             .catch(error => {
                 console.error('Error:', error);
+            })
+            .finally(() => {
+                // Hide loading message
+                document.getElementById('loading').style.display = 'none';
             });
         }
-
+        
         function displayResult(data) {
             const resultContainer = document.getElementById('result');
             resultContainer.innerHTML = '';
@@ -81,20 +134,32 @@
                 name: data.filename,
                 children: [
                     { name: `Filesize: ${data.filesize}` },
-                    { name: `Filetype: ${data.filetype}` },
+                    { name: `Filetype: ${data.filetype_infer}` },
+                    { name: `Filetype: ${data.filetype_command}` },
                     { name: `MD5: ${data.md5}` },
                     { name: `SHA256: ${data.sha256}` },
+                    { name: `SHA1: ${data.sha1}` },
+                    { name: `SHA384: ${data.sha384}` },
                     { name: `Human Hash: ${data.humanhash}` },
                     { name: `Fuzzy Hash: ${data.fuzzy_hash}` },
                 ]
             };
+            
+            
+
+            // // Add capa_command to the tree data if it is not empty
+            // if (data.capa_command) {
+            //     treeData.children.push({ name: `Capa Command Output: ${data.capa_command}` });
+            // } else {
+            //     treeData.children.push({ name: `Capa Command Output: The PE file is Packed-Obfuscated-Compressed and cannot be analysed using "capa"` });
+            // }
 
             // Clear previous tree
             document.getElementById('tree').innerHTML = '';
 
             // Set dimensions and margins for the graph
-            const margin = { top: 20, right: 90, bottom: 30, left: 90 },
-                  width = 800 - margin.left - margin.right,
+            const margin = { top: 20, right: 90, bottom: 30, left: 180 },
+                  width = 1200 - margin.left - margin.right,
                   height = 600 - margin.top - margin.bottom;
 
             const svg = d3.select("#tree").append("svg")
@@ -157,6 +222,7 @@
                 nodeInfo.style("display", "block")
                     .html(`<strong>${d.data.name}</strong>`);
             });
+          
 
             node.on("mousemove", function(event) {
                 // Move the info box with the mouse
@@ -169,6 +235,14 @@
                 d3.select(this).select("text").style("font-weight", "normal");
                 nodeInfo.style("display", "none"); // Hide the info box
             });
+            
+            // Display the Capa Command Output below the D3 graph
+            const capaOutputDiv = document.getElementById('capaOutput');
+            if (data.capa_command) {
+                capaOutputDiv.innerHTML = `<strong>Capabilities found using capa:</strong>\n${data.capa_command}`;
+            } else {
+                capaOutputDiv.innerHTML = `If the analysed file is a PE (Portable Executable) binary file, "capa" could not evaluate due to obfuscation/compression or is packed. Check info above.`;
+            }
         }
     </script>
 </body>
