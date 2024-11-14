@@ -17,15 +17,23 @@ use sanitize_filename::sanitize;
 use human_hash::humanize; 
 use uuid::Uuid;
 use ssdeep::hash_file;
+use std::process::Command;
+use sha1::Digest; // Import Digest trait from sha1
+use pesign::PeSign; // Import PeSign from pesign
 
 #[derive(Serialize)]
 struct FileInfo {
     filesize: String,
-    filetype: String,
+    filetype_infer: String, // File type from infer
+    filetype_command: String, // File type from the file command
+    // filetype: String,
     md5: String,
     sha256: String,
+    sha1: String,
+    sha384: String,
     humanhash: String,
     fuzzy_hash: String,
+    capa_command: String,
 }
 
 async fn save_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
@@ -62,23 +70,78 @@ fn analyze_file(filepath: String) -> FileInfo {
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer).unwrap();
 
-    let filetype = infer::get(&buffer).map_or("unknown".to_string(), |kind| kind.mime_type().to_string());
+    // let filetype = infer::get(&buffer).map_or("unknown".to_string(), |kind| kind.mime_type().to_string());
+    // Get file type using infer
+    let mut filetype_infer = infer::get(&buffer).map_or("unknown".to_string(), |kind| kind.mime_type().to_string());
+
+    // Call the `file` command to get file type
+    let file_command_output = Command::new("file")
+        .arg(&filepath)
+        .output()
+        .expect("Failed to execute command");
+
+    let filetype_command = String::from_utf8_lossy(&file_command_output.stdout).to_string();
+
+    // Extract the part after the filename
+    let filetype_command = filetype_command
+        .split(':') // Split on colon
+        .nth(1) // Get the second part (after the colon)
+        .unwrap_or("") // Default to an empty string if not found
+        .trim(); // Trim whitespace
 
     let md5 = md5::compute(&buffer);
     let sha256 = sha256_digest(&buffer);
+    let sha1 = sha1::Sha1::digest(&buffer);
+    let sha384 = sha2::Sha384::digest(&buffer);
 
     let uuid = Uuid::new_v5(&Uuid::NAMESPACE_OID, &buffer); 
     let humanhash = humanize(&uuid, 4);
 
     let fuzzy_hash = hash_file(&filepath); 
     let fuzzy_hash_str = match fuzzy_hash { Ok(fh) => fh.to_string(), Err(_) => String::from("N/A"), }; 
+
+    let mut capa_command = String::new();
+
+    // Check if the file is a PE file and use pesign
+    if filetype_infer == "application/vnd.microsoft.portable-executable" {
+        if let Some(_pesign) = PeSign::from_pe_path(&filepath).unwrap() {
+            println!("The file '{}' is a signed PE!", filepath);
+            // Append a suffix to filetype_infer
+            filetype_infer = format!("{} (SIGNED PE FILE)", filetype_infer);
+        } else {
+            println!("The file '{}' is not a signed PE file!", filepath);
+            // Append a suffix to filetype_infer
+            filetype_infer = format!("{} (NOT SIGNED PE FILE!!!)", filetype_infer);
+        }
+        
+        // Execute the capa command only for PE files
+        let capa_command_output = Command::new("./capa")
+        .arg(&filepath)
+        // .arg("> capa_temp.txt")
+        .output()
+        .expect("Failed to execute command");
+
+        // Capture the output of the command
+        capa_command = String::from_utf8_lossy(&capa_command_output.stdout).to_string();
+
+        // Print stderr for debugging
+        // let stderr = String::from_utf8_lossy(&capa_command_output.stderr);
+        // if !stderr.is_empty() {
+        //     println!("Error output from capa command: {}", stderr);
+        // }
+    }
+
     FileInfo {
         filesize,
-        filetype,
+        filetype_infer, // Use the output from infer
+        filetype_command: filetype_command.trim().to_string(), // Use the output from the file command
         md5: format!("{:x}", md5),
         sha256,
-        humanhash, //: "example-humanhash".to_string(),
+        sha1: format!("{:x}", sha1),
+        sha384: format!("{:x}", sha384),
+        humanhash, 
         fuzzy_hash: fuzzy_hash_str,
+        capa_command,
     }
 }
 
