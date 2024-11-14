@@ -4,6 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Upload</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; margin: 0;
+        }
+        .node {
+            cursor: pointer;
+        }
+        .node circle {
+            fill: #fff;
+            stroke: steelblue;
+            stroke-width: 3px;
+        }
+        .node text {
+            font: 12px sans-serif;
+        }
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 2px;
+        }
+        #nodeInfo {
+            position: absolute;
+            left: 850px; /* Adjust this value based on your layout */
+            top: 50px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: white;
+            display: none;
+            z-index: 10;
+        }
+    </style>
 </head>
 <body>
     <h2>Upload a File</h2>
@@ -12,20 +48,126 @@
         <input type="button" value="Upload" onclick="uploadFile()">
     </form>
     <div id="result"></div>
+    <div id="tree"></div>
+    <div id="nodeInfo"></div>
 
+    <script src="https://d3js.org/d3.v6.min.js"></script>
     <script>
         function uploadFile() {
             const formData = new FormData(document.getElementById('uploadForm'));
+            const fileInput = document.getElementById('fileInput');
+            const filename = fileInput.files[0].name;
+
             fetch('/upload', {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById('result').innerHTML = JSON.stringify(data, null, 2);
+                data.filename = filename;  // Add the filename to the data object
+                displayResult(data);
             })
             .catch(error => {
                 console.error('Error:', error);
+            });
+        }
+
+        function displayResult(data) {
+            const resultContainer = document.getElementById('result');
+            resultContainer.innerHTML = '';
+
+            // Prepare the data for D3.js
+            const treeData = {
+                name: data.filename,
+                children: [
+                    { name: `Filesize: ${data.filesize}` },
+                    { name: `Filetype: ${data.filetype}` },
+                    { name: `MD5: ${data.md5}` },
+                    { name: `SHA256: ${data.sha256}` },
+                    { name: `Human Hash: ${data.humanhash}` },
+                    { name: `Fuzzy Hash: ${data.fuzzy_hash}` },
+                ]
+            };
+
+            // Clear previous tree
+            document.getElementById('tree').innerHTML = '';
+
+            // Set dimensions and margins for the graph
+            const margin = { top: 20, right: 90, bottom: 30, left: 90 },
+                  width = 800 - margin.left - margin.right,
+                  height = 600 - margin.top - margin.bottom;
+
+            const svg = d3.select("#tree").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            // 
+            const treemap = d3.tree().size([height, width * 0.2]); // Reduce width to 80% of original
+
+            let nodes = d3.hierarchy(treeData, d => d.children);
+
+            nodes = treemap(nodes);
+
+            const link = svg.selectAll(".link")
+                .data(nodes.descendants().slice(1))
+                .enter().append("path")
+                .attr("class", "link")
+                .attr("d", d => {
+                    return "M" + d.y + "," + d.x
+                        + "C" + (d.y + d.parent.y) / 2 + "," + d.x
+                        + " " + (d.y + d.parent.y) / 2 + "," + d.parent.x
+                        + " " + d.parent.y + "," + d.parent.x;
+                });
+
+                const node = svg.selectAll(".node")
+                .data(nodes.descendants())
+                .enter().append("g")
+                .attr("class", "node")
+                .attr("transform", d => "translate(" + d.y + "," + d.x + ")");
+
+            node.append("circle")
+                .attr("r", 10);
+
+            // node.append("text")
+            //     .attr("dy", ".35em")
+            //     .attr("x", d => d.children ? -13 : 13)
+            //     .style("text-anchor", d => d.children ? "end" : "start")
+            //     .text(d => d.data.name);
+            node.append("text")
+                .attr("dy", ".35em")
+                .attr("x", d => d.children ? -13 : 13)
+                .style("text-anchor", d => d.children ? "end" : "start")
+                .html(d => {
+                    const parts = d.data.name.split(': '); // Split by colon or any other delimiter
+                    return `
+                        <tspan x="${d.children ? -13 : 13}" dy="0">${parts[0]}</tspan>
+                        <tspan x="${d.children ? -13 : 13}" dy="1.2em">${parts[1] || ''}</tspan>
+                    `;
+                });
+
+            const nodeInfo = d3.select("#nodeInfo");
+
+            node.on("mouseover", function(event, d) {
+                d3.select(this).select("circle").style("fill", "lightsteelblue");
+                d3.select(this).select("text").style("font-weight", "bold");
+
+                // Display the full text of the node
+                nodeInfo.style("display", "block")
+                    .html(`<strong>${d.data.name}</strong>`);
+            });
+
+            node.on("mousemove", function(event) {
+                // Move the info box with the mouse
+                nodeInfo.style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 20) + "px");
+            });
+
+            node.on("mouseout", function(event, d) {
+                d3.select(this).select("circle").style("fill", "#fff");
+                d3.select(this).select("text").style("font-weight", "normal");
+                nodeInfo.style("display", "none"); // Hide the info box
             });
         }
     </script>
