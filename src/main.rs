@@ -33,7 +33,9 @@ struct FileInfo {
     sha384: String,
     humanhash: String,
     fuzzy_hash: String,
+    exiftool_command: String,
     capa_command: String,
+    pecli_command: String,
 }
 
 async fn save_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
@@ -100,7 +102,16 @@ fn analyze_file(filepath: String) -> FileInfo {
     let fuzzy_hash = hash_file(&filepath); 
     let fuzzy_hash_str = match fuzzy_hash { Ok(fh) => fh.to_string(), Err(_) => String::from("N/A"), }; 
 
+    // Call the `file` command to get file type
+    let exiftool_command_output = Command::new("exiftool")
+        .arg(&filepath)
+        .output()
+        .expect("Failed to execute command");
+
+    let exiftool_command = String::from_utf8_lossy(&exiftool_command_output.stdout).to_string();
+
     let mut capa_command = String::new();
+    let mut pecli_command = String::new();
 
     // Check if the file is a PE file and use pesign
     if filetype_infer == "application/vnd.microsoft.portable-executable" {
@@ -114,12 +125,25 @@ fn analyze_file(filepath: String) -> FileInfo {
             filetype_infer = format!("{} (NOT SIGNED PE FILE!!!)", filetype_infer);
         }
         
+
+        // Execute the capa command only for PE files
+        let pecli_command_output = Command::new("pecli")
+            .arg("info")
+            .arg(&filepath)
+            // .arg("> capa_temp.txt")
+            .output()
+            .expect("Failed to execute command");
+        
+        // Capture the output of the command
+        pecli_command = String::from_utf8_lossy(&pecli_command_output.stdout).to_string();
+
+
         // Execute the capa command only for PE files
         let capa_command_output = Command::new("./capa")
-        .arg(&filepath)
-        // .arg("> capa_temp.txt")
-        .output()
-        .expect("Failed to execute command");
+            .arg(&filepath)
+            // .arg("> capa_temp.txt")
+            .output()
+            .expect("Failed to execute command");
 
         // Capture the output of the command
         capa_command = String::from_utf8_lossy(&capa_command_output.stdout).to_string();
@@ -142,6 +166,8 @@ fn analyze_file(filepath: String) -> FileInfo {
         humanhash, 
         fuzzy_hash: fuzzy_hash_str,
         capa_command,
+        exiftool_command,
+        pecli_command,
     }
 }
 
