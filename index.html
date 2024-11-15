@@ -60,8 +60,34 @@
             font-size: 11px; 
             white-space: pre-wrap; 
             padding: 10px; /* Optional: Add padding for better readability */
-            max-height: 200px; /* Set a maximum height */
-            overflow-y: auto; /* Enable vertical scrolling */
+            /* max-height: 600px; Set a maximum height */
+            overflow-y: visible; /* auto; Enable vertical scrolling */
+            width: 100%; /* Make it responsive */
+            text-align: left; /* Align text to the left */
+            border: none; /* Remove border */
+            display: flex; /* Use flexbox for centering */
+            justify-content: center; /* Center content */
+        }
+        #peclitoolOutput {
+            margin-top: 0; /* Remove margin to align with tree */
+            font-size: 11px; 
+            white-space: pre-wrap; 
+            padding: 10px; /* Optional: Add padding for better readability */
+            /* max-height: 600px; Set a maximum height */
+            overflow-y: visible; /* auto; /* Enable vertical scrolling */
+            width: 100%; /* Make it responsive */
+            text-align: left; /* Align text to the left */
+            border: none; /* Remove border */
+            display: flex; /* Use flexbox for centering */
+            justify-content: center; /* Center content */
+        }
+        #ExiftoolOutput {
+            margin-top: 0; /* Remove margin to align with tree */
+            font-size: 11px; 
+            white-space: pre-wrap; 
+            padding: 10px; /* Optional: Add padding for better readability */
+            /* max-height: 600px; Set a maximum height */
+            overflow-y: visible; /* auto; /* Enable vertical scrolling */
             width: 100%; /* Make it responsive */
             text-align: left; /* Align text to the left */
             border: none; /* Remove border */
@@ -87,9 +113,11 @@
     <!-- New container for tree and capaOutput -->
     <div style="width: 100%; text-align: center;">
         <div id="tree"></div>
-        <pre id="capaOutput" style="font-size: 10px; white-space: pre-wrap; display: inline-block;"></pre> <!-- Use inline-block to center -->
+        <!-- <pre id="capaOutput" style="font-size: 10px; white-space: pre-wrap; display: inline-block;"></pre> Use inline-block to center -->
     </div>
-
+    <pre id="ExiftoolOutput" style="font-size: 10px; white-space: pre-wrap;"></pre>
+    <pre id="peclitoolOutput" style="font-size: 10px; white-space: pre-wrap;"></pre>
+    <pre id="capaOutput" style="font-size: 10px; white-space: pre-wrap;"></pre>
     <div id="nodeInfo"></div>
     
     <script src="https://d3js.org/d3.v6.min.js"></script>
@@ -142,6 +170,7 @@
                     { name: `SHA384: ${data.sha384}` },
                     { name: `Human Hash: ${data.humanhash}` },
                     { name: `Fuzzy Hash: ${data.fuzzy_hash}` },
+                    // { name: `Exiftool: ${data.exiftool_command}` },
                 ]
             };
             
@@ -237,9 +266,25 @@
             });
             
             // Display the Capa Command Output below the D3 graph
+            const ExiftoolOutputDiv = document.getElementById('ExiftoolOutput');
+            if (data.exiftool_command) {
+                ExiftoolOutputDiv.innerHTML = `${data.exiftool_command}`;
+            } else {
+                ExiftoolOutputDiv.innerHTML = `Error running ExifTool on this file!!!`;
+            }
+
+            // Display the Capa Command Output below the D3 graph
+            const peclitoolOutputDiv = document.getElementById('peclitoolOutput');
+            if (data.pecli_command) {
+                peclitoolOutputDiv.innerHTML = `${data.pecli_command}`;
+            } else {
+                peclitoolOutputDiv.innerHTML = ` `;
+            }
+
+            // Display the Capa Command Output below the D3 graph
             const capaOutputDiv = document.getElementById('capaOutput');
             if (data.capa_command) {
-                capaOutputDiv.innerHTML = `<strong>Capabilities found using capa:</strong>\n${data.capa_command}`;
+                capaOutputDiv.innerHTML = `${data.capa_command}`;
             } else {
                 capaOutputDiv.innerHTML = `If the analysed file is a PE (Portable Executable) binary file, "capa" could not evaluate due to obfuscation/compression or is packed. Check info above.`;
             }
