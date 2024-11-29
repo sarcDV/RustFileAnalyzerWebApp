@@ -1,5 +1,3 @@
 ## File Analyzer Web App
 
-<video>
-  <source src="fileanalyzer.mp4" type="video/mp4">
-</video>
+[![Watch the video](https://raw.githubusercontent.com/sarcDV/RustFileAnalyzerWebApp/main/thumbnail.jpg)](https://raw.githubusercontent.com/sarcDV/RustFileAnalyzerWebApp/main/fileanalyzer.mp4)
