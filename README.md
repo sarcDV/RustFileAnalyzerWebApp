@@ -1,3 +1,3 @@
 ## File Analyzer Web App
 
-[![Watch the video](https://raw.githubusercontent.com/sarcDV/RustFileAnalyzerWebApp/main/thumbnail.jpg)](https://raw.githubusercontent.com/sarcDV/RustFileAnalyzerWebApp/main/fileanalyzer.mp4)
+[![Watch the video](https://raw.githubusercontent.com/sarcDV/RustFileAnalyzerWebApp/main/assets/thumbnail.jpg)](https://raw.githubusercontent.com/sarcDV/RustFileAnalyzerWebApp/main/assets/fileanalyzer.mp4)
