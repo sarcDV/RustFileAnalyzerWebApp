@@ -1,2 +1,5 @@
 ## File Analyzer Web App
-<img src="fileanalyzer.gif" alt="Description" height="640"/>
+
+<video height="640" controls>
+  <source src="fileanalyzer.mp4" type="video/mp4">
+</video>
