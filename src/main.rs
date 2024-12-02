@@ -20,13 +20,14 @@ use ssdeep::hash_file;
 use std::process::Command;
 use sha1::Digest; // Import Digest trait from sha1
 use pesign::PeSign; // Import PeSign from pesign
+use std::fs;
 
 #[derive(Serialize)]
 struct FileInfo {
     filesize: String,
     filetype_infer: String, // File type from infer
     filetype_command: String, // File type from the file command
-    // filetype: String,
+    filetype_trid: String,
     md5: String,
     sha256: String,
     sha1: String,
@@ -67,7 +68,6 @@ async fn save_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
 fn analyze_file(filepath: String) -> FileInfo {
     let metadata = std::fs::metadata(&filepath).unwrap();
     let filesize = format_size(metadata.len());
-
     let mut file = File::open(&filepath).unwrap();
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer).unwrap();
@@ -90,7 +90,50 @@ fn analyze_file(filepath: String) -> FileInfo {
         .nth(1) // Get the second part (after the colon)
         .unwrap_or("") // Default to an empty string if not found
         .trim(); // Trim whitespace
+    //----------------------------------------------------------------------
+    //------------------ TRID ----------------------------------------------
+    // Get the full path
+    let fullpath = fs::canonicalize(filepath.clone())
+        .expect("Failed to get the full path");
+    // Call the `trid` command to get file type
+    let trid_command_output = Command::new("trid")
+        .arg(&fullpath)
+        .output()
+        .expect("Failed to execute command");
 
+    let filetype_trid = String::from_utf8_lossy(&trid_command_output.stdout).to_string();
+    println!("{}", filetype_trid);
+    // Extract the part after the filename and format it
+    let formatted_filetype_trid: Vec<String> = filetype_trid
+        .lines() // Split into lines
+        .filter_map(|line| {
+            // Check if the line contains a percentage (indicating a file type line)
+            if line.contains('%') {
+                // Return the entire line as it contains the percentage and file type info
+                Some(line.trim().to_string()) // Trim whitespace and return the line
+            } else {
+                None
+            }
+        })
+        .collect(); // Collect into a vector
+
+    // Build the final output string
+    let final_output = formatted_filetype_trid
+        .iter()
+        .enumerate()
+        .map(|(i, info)| {
+            if i < formatted_filetype_trid.len() - 1 {
+                format!("{},", info) // Add a comma for all but the last item
+            } else {
+                info.clone() // Last item without a comma
+            }
+        })
+        .collect::<Vec<String>>()
+        .join("\n"); // Join with newlines
+
+    // Update the original variable
+    let filetype_trid = final_output;
+    // -------------------------------------------------------    
     let md5 = md5::compute(&buffer);
     let sha256 = sha256_digest(&buffer);
     let sha1 = sha1::Sha1::digest(&buffer);
@@ -159,6 +202,7 @@ fn analyze_file(filepath: String) -> FileInfo {
         filesize,
         filetype_infer, // Use the output from infer
         filetype_command: filetype_command.trim().to_string(), // Use the output from the file command
+        filetype_trid: filetype_trid.trim().to_string(), // Use the output from the trid command
         md5: format!("{:x}", md5),
         sha256,
         sha1: format!("{:x}", sha1),
@@ -209,3 +253,39 @@ async fn main() -> std::io::Result<()> {
     .run()
     .await
 }
+// integrare flarestrings <sample> | rank_strings
+// integrare yara matching
+// integrare yara rules
+
+// tools for pdf files:
+// https://github.com/DidierStevens/DidierStevensSuite/blob/master/pdfid.py : 'Tool to test a PDF file'
+// https://github.com/DidierStevens/DidierStevensSuite/blob/master/pdf-parser.py : 'pdf-parser, use it to parse a PDF document'
+// ? clamscan yourfile.pdf
+// https://github.com/jesparza/peepdf/blob/master/peepdf.py
+
+// tools for images:
+// https://github.com/DidierStevens/DidierStevensSuite/blob/master/jpegdump.py : 'JPEG file analysis tool'
+
+// tools for MS office documents:
+// python-oletools https://github.com/decalage2/oletools
+// Tools to analyze malicious documents
+
+//     oleid: to analyze OLE files to detect specific characteristics usually found in malicious files.
+//     olevba: to extract and analyze VBA Macro source code from MS Office documents (OLE and OpenXML).
+//     MacroRaptor: to detect malicious VBA Macros
+//     msodde: to detect and extract DDE/DDEAUTO links from MS Office documents, RTF and CSV
+//     pyxswf: to detect, extract and analyze Flash objects (SWF) that may be embedded in files such as MS Office documents (e.g. Word, Excel) and RTF, which is especially useful for malware analysis.
+//     oleobj: to extract embedded objects from OLE files.
+//     rtfobj: to extract embedded objects from RTF files.
+
+// Tools to analyze the structure of OLE files
+
+//     olebrowse: A simple GUI to browse OLE files (e.g. MS Word, Excel, Powerpoint documents), to view and extract individual data streams.
+//     olemeta: to extract all standard properties (metadata) from OLE files.
+//     oletimes: to extract creation and modification timestamps of all streams and storages.
+//     oledir: to display all the directory entries of an OLE file, including free and orphaned entries.
+//     olemap: to display a map of all the sectors in an OLE file.
+
+// Tools to analyze archive fiels:
+//     p7zip-full
+//     clamscan file.zip
