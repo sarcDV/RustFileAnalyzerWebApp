@@ -3,105 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Upload</title>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 0; /* Remove default margin */
-            display: flex; /* Use flexbox for layout */
-            flex-direction: column; /* Stack elements vertically */
-            align-items: center; /* Center elements horizontally */
-            justify-content: flex-start; /* Align items at the top */
-            height: 100vh; /* Full height of the viewport */
-            padding-top: 20px; /* Space from the top */
-        }
-        .fixed-form {
-            z-index: 1000; /* Ensure it appears above other content */
-            background-color: white; /* Optional: Background color for better visibility */
-            padding: 10px; /* Optional: Padding for aesthetics */
-            border: 1px solid #ccc; /* Optional: Border for better visibility */
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Optional: Shadow for depth */
-            text-align: center; /* Center text inside the form */
-            margin-bottom: 20px; /* Space below the form */
-        }
-        .node {
-            cursor: pointer;
-        }
-        .node circle {
-            fill: #fff;
-            stroke: steelblue;
-            stroke-width: 3px;
-        }
-        .node text {
-            font: 12px sans-serif;
-        }
-        .link {
-            fill: none;
-            stroke: #ccc;
-            stroke-width: 2px;
-        }
-        #nodeInfo {
-            position: absolute;
-            left: 850px; /* Adjust this value based on your layout */
-            top: 50px;
-            border: 1px solid #ccc;
-            padding: 10px;
-            background-color: white;
-            display: none;
-            z-index: 10;
-        }
-        #loading {
-            margin-top: 20px;
-            font-size: 18px;
-            color: blue;
-        }
-        #capaOutput {
-            margin-top: 0; /* Remove margin to align with tree */
-            font-size: 11px; 
-            white-space: pre-wrap; 
-            padding: 10px; /* Optional: Add padding for better readability */
-            /* max-height: 600px; Set a maximum height */
-            overflow-y: visible; /* auto; Enable vertical scrolling */
-            width: 100%; /* Make it responsive */
-            text-align: left; /* Align text to the left */
-            border: none; /* Remove border */
-            display: flex; /* Use flexbox for centering */
-            justify-content: center; /* Center content */
-        }
-        #peclitoolOutput {
-            margin-top: 0; /* Remove margin to align with tree */
-            font-size: 11px; 
-            white-space: pre-wrap; 
-            padding: 10px; /* Optional: Add padding for better readability */
-            /* max-height: 600px; Set a maximum height */
-            overflow-y: visible; /* auto; /* Enable vertical scrolling */
-            width: 100%; /* Make it responsive */
-            text-align: left; /* Align text to the left */
-            border: none; /* Remove border */
-            display: flex; /* Use flexbox for centering */
-            justify-content: center; /* Center content */
-        }
-        #ExiftoolOutput {
-            margin-top: 0; /* Remove margin to align with tree */
-            font-size: 11px; 
-            white-space: pre-wrap; 
-            padding: 10px; /* Optional: Add padding for better readability */
-            /* max-height: 600px; Set a maximum height */
-            overflow-y: visible; /* auto; /* Enable vertical scrolling */
-            width: 100%; /* Make it responsive */
-            text-align: left; /* Align text to the left */
-            border: none; /* Remove border */
-            display: flex; /* Use flexbox for centering */
-            justify-content: center; /* Center content */
-        }
-        #tree {
-            margin-top: 20px; /* Add some space above the tree */
-            width: 100%; /* Make it responsive */
-            text-align: center; /* Center the tree */
-        }
-    </style>
+    <title>File Analyzer</title>
+    <!-- <link rel="stylesheet" href="styles.css">  -->
 </head>
+<style>
+    body { 
+        font-family: 'Roboto', sans-serif; 
+        margin: 0; /* Remove default margin */
+        display: flex; /* Use flexbox for layout */
+        flex-direction: column; /* Stack elements vertically */
+        align-items: center; /* Center elements horizontally */
+        justify-content: flex-start; /* Align items at the top */
+        height: 100vh; /* Full height of the viewport */
+        padding-top: 20px; /* Space from the top */
+        color: white; /* Set font color to white */
+        background-color: black; /* Set background color to black */
+        }
+            
+    .fixed-form {
+                z-index: 1000; /* Ensure it appears above other content */
+                background-color: white; /* Optional: Background color for better visibility */
+                padding: 10px; /* Optional: Padding for aesthetics */
+                border: 1px solid #ccc; /* Optional: Border for better visibility */
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Optional: Shadow for depth */
+                text-align: center; /* Center text inside the form */
+                margin-bottom: 20px; /* Space below the form */
+            }
+    
+    .node {
+        cursor: pointer;
+        }
+    .node circle {
+        fill: #000;
+        stroke: steelblue;
+        stroke-width: 3px;
+        }
+    .node text {
+        font: 12px sans-serif;
+        fill: white;
+        }
+    .link {
+        fill: none;
+        stroke: #ccc;
+        stroke-width: 2px;
+        }
+    #nodeInfo {
+        position: absolute;
+        left: 850px; /* Adjust this value based on your layout */
+        top: 50px;
+        border: 1px solid #ccc;
+        padding: 10px;
+        background-color: black;
+        color: white;
+        display: none;
+        z-index: 10;
+        }
+#loading {
+    margin-top: 40px;
+    font-size: 18px;
+    color: white;
+    }
+
+#capaOutput {
+    margin-top: 0; /* Remove margin to align with tree */
+    font-size: 11px; 
+    white-space: pre-wrap; 
+    padding: 10px; /* Optional: Add padding for better readability */
+    /* max-height: 600px; Set a maximum height */
+    overflow-y: visible; /* auto; Enable vertical scrolling */
+    width: 100%; /* Make it responsive */
+    text-align: left; /* Align text to the left */
+    border: none; /* Remove border */
+    display: flex; /* Use flexbox for centering */
+    justify-content: center; /* Center content */
+    }
+
+#peclitoolOutput {
+    margin-top: 0; /* Remove margin to align with tree */
+    font-size: 11px; 
+    white-space: pre-wrap; 
+    padding: 10px; /* Optional: Add padding for better readability */
+    /* max-height: 600px; Set a maximum height */
+    overflow-y: visible; /* auto; /* Enable vertical scrolling */
+    width: 100%; /* Make it responsive */
+                text-align: left; /* Align text to the left */
+                border: none; /* Remove border */
+                display: flex; /* Use flexbox for centering */
+                justify-content: center; /* Center content */
+            }
+            #ExiftoolOutput {
+                margin-top: 0; /* Remove margin to align with tree */
+                font-size: 11px; 
+                white-space: pre-wrap; 
+                padding: 10px; /* Optional: Add padding for better readability */
+                /* max-height: 600px; Set a maximum height */
+                overflow-y: visible; /* auto; /* Enable vertical scrolling */
+                width: 100%; /* Make it responsive */
+                text-align: left; /* Align text to the left */
+                border: none; /* Remove border */
+                display: flex; /* Use flexbox for centering */
+                justify-content: center; /* Center content */
+            }
+            #TridOutput {
+                margin-top: 0; /* Remove margin to align with tree */
+                font-size: 11px; 
+                white-space: pre-wrap; 
+                padding: 10px; /* Optional: Add padding for better readability */
+                /* max-height: 600px; Set a maximum height */
+                overflow-y: visible; /* auto; /* Enable vertical scrolling */
+                width: 100%; /* Make it responsive */
+                text-align: left; /* Align text to the left */
+                border: none; /* Remove border */
+                display: flex; /* Use flexbox for centering */
+                justify-content: center; /* Center content */
+            }
+            #tree {
+                margin-top: 20px; /* Add some space above the tree */
+                width: 100%; /* Make it responsive */
+                text-align: center; /* Center the tree */
+                background-color: black;
+                color: white;
+            }
+     
+    </style>
+<!-- <body style="background-color: #121212; color: #E0E0E0;"> -->
 <body>
+
+    <h2>What do you want to do?</h2>
+    <select id="actionSelect" onchange="toggleSections()">
+        <option value="">Select an action</option>
+        <option value="upload">Analyze a File</option>
+        <option value="check">Check Hash or URL</option>
+    </select>
+
+    <!-- File Upload Section -->
+    <div id="uploadSection" style="display: none;">
+        <h2>Upload a File</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" id="fileInput" name="file"><br><br>
+            <input type="button" value="Upload" onclick="uploadFile()">
+        </form>
+        <div id="loading" style="display: none;">Analysis in progress...</div>
+        <div id="result"></div>
+        
+        <!-- New container for tree and capaOutput -->
+        <div style="width: 100%; text-align: center;">
+            <div id="tree"></div>
+            <pre id="TridOutput" style="font-size: 10px; white-space: pre-wrap;"></pre>
+            <pre id="ExiftoolOutput" style="font-size: 10px; white-space: pre-wrap;"></pre>
+            <pre id="peclitoolOutput" style="font-size: 10px; white-space: pre-wrap;"></pre>
+            <pre id="capaOutput" style="font-size: 10px; white-space: pre-wrap;"></pre>
+        </div>
+        <div id="nodeInfo"></div>
+    </div>
+
+    <!-- Hash/URL Check Section -->
+    <div id="checkSection" style="display: none;">
+        <h2>Check Hash or URL</h2>
+        <div>
+            <input type="text" id="hashOrUrlInput" placeholder="Enter Hash or URL">
+            <input type="button" value="Check" onclick="checkHashOrUrl()">
+        </div>
+        <div id="checkResult"></div>
+    </div>
+<!-- 
     <h2>Upload a File</h2>
     <form id="uploadForm" enctype="multipart/form-data">
         <input type="file" id="fileInput" name="file"><br><br>
@@ -110,18 +175,45 @@
     <div id="loading" style="display: none;">Analysis in progress...</div>
     <div id="result"></div>
     
-    <!-- New container for tree and capaOutput -->
+   New container for tree and capaOutput 
     <div style="width: 100%; text-align: center;">
         <div id="tree"></div>
-        <!-- <pre id="capaOutput" style="font-size: 10px; white-space: pre-wrap; display: inline-block;"></pre> Use inline-block to center -->
+        
     </div>
+    <pre id="TridOutput" style="font-size: 10px; white-space: pre-wrap;"></pre>
     <pre id="ExiftoolOutput" style="font-size: 10px; white-space: pre-wrap;"></pre>
     <pre id="peclitoolOutput" style="font-size: 10px; white-space: pre-wrap;"></pre>
     <pre id="capaOutput" style="font-size: 10px; white-space: pre-wrap;"></pre>
     <div id="nodeInfo"></div>
     
+    New section for hash/URL input 
+    <h2>Check Hash or URL</h2>
+    <div>
+        <input type="text" id="hashOrUrlInput" placeholder="Enter Hash or URL">
+        <input type="button" value="Check" onclick="checkHashOrUrl()">
+    </div>
+    <div id="checkResult"></div> -->
+    <!-- ****************************************************************************** -->
+    <!-- ****************************************************************************** -->
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script>
+        function toggleSections() {
+            const action = document.getElementById('actionSelect').value;
+            const uploadSection = document.getElementById('uploadSection');
+            const checkSection = document.getElementById('checkSection');
+
+            if (action === 'upload') {
+                uploadSection.style.display = 'block';
+                checkSection.style.display = 'none';
+            } else if (action === 'check') {
+                uploadSection.style.display = 'none';
+                checkSection.style.display = 'block';
+            } else {
+                uploadSection.style.display = 'none';
+                checkSection.style.display = 'none';
+            }
+        }
+
         function uploadFile() {
             const formData = new FormData(document.getElementById('uploadForm'));
             const fileInput = document.getElementById('fileInput');
@@ -287,6 +379,14 @@
                 capaOutputDiv.innerHTML = `${data.capa_command}`;
             } else {
                 capaOutputDiv.innerHTML = `If the analysed file is a PE (Portable Executable) binary file, "capa" could not evaluate due to obfuscation/compression or is packed. Check info above.`;
+            }
+
+            // Display the Capa Command Output below the D3 graph
+            const TridOutputDiv = document.getElementById('TridOutput');
+            if (data.filetype_trid) {
+                TridOutputDiv.innerHTML = `${data.filetype_trid}`;
+            } else {
+                TridOutputDiv.innerHTML = ` `;
             }
         }
     </script>
